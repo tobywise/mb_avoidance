@@ -5,6 +5,22 @@ import GameOver from './scenes/GameOver.js';
 import EndScene from './scenes/EndScene.js';
 
 
+var RollbarProxy = function() {};
+
+RollbarProxy.prototype.sendJsonPayload = function(json, success, error) {
+  // Queue, store, or forward json payload
+
+  // Callback either error or success
+//   success(msg);
+  console.log(json);
+}
+
+try {
+    doSomething();
+  } catch (e) {
+    Rollbar.error("Something went wrong", e);
+  }
+
 // SET UP GAME
 // var training = new GameScene('TrainingScene');
 var game = new GameScene('GameScene');
@@ -17,7 +33,7 @@ let config = {
     height: 600,
     scene: [
         // GameStart,
-        TrainingScene,
+        // TrainingScene,
         game,
         gameover,
         EndScene
@@ -34,8 +50,6 @@ function getQueryVariable(variable)
     }
     return(false);
 }
-
-
 
 
 // START GAME
@@ -64,6 +78,29 @@ var check_start = function (uid) {
         var studyID = getQueryVariable('STUDY');
     }
 
+    // STUDY ID
+    var version = 0;
+    if (window.location.search.indexOf('VERSION') > -1) {
+        var version = getQueryVariable('VERSION');
+    }
+
+    // Binary outcomes
+    var binary = false;
+    if (window.location.search.indexOf('BINARY') > -1) {
+        var binaryParam = getQueryVariable('BINARY');
+        if (binaryParam == 'TRUE') {
+            binary = true;
+        }
+        else if (binaryParam == 'rand') {
+            if (Phaser.Math.Between(0, 1)) {
+                binary = true;
+            }
+            else {
+                binary = false;
+            }
+        }
+        
+    }
 
     document.getElementById('start').innerHTML = "";
     window.scrollTo(0,0);
@@ -82,7 +119,6 @@ var check_start = function (uid) {
 
         game.registry.set('secondStateOrder', game.config.secondStateOrder);
         
-
         // Shuffle ships
         var shipNames = ['Green ship', 'Red ship', 'Pink ship', 'Orange ship'];
         game.registry.set('shipNames', shipNames);
@@ -99,6 +135,7 @@ var check_start = function (uid) {
 
         game.config.outcome_duration = 4000;
         game.config.studyID = studyID;
+        game.config.binary = binary;
 
         game.registry.set('trial', 0);
         game.registry.set('data', {});
@@ -119,10 +156,17 @@ var check_start = function (uid) {
             date: new Date().toLocaleDateString(),
             time: new Date().toLocaleTimeString(),
             trial_data: [],
-            attention_checks: []
+            attention_checks: [],
+            binary: binary,
+            version: parseInt(version),
             }).catch(err => {
-                Sentry.captureException(err)
-                console.log(err);
+                Rollbar.error(err, function(err, data) {
+                    if (err) {
+                      console.log("Error while reporting error to Rollbar: ", e);
+                    } else {
+                      console.log("Error successfully reported to Rollbar. UUID:", data.result.uuid);
+                    }
+                  });
                 alert("Something went wrong, sorry. Please contact us on Prolific");
             })
                     

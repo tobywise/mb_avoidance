@@ -63,9 +63,15 @@ class GameScene extends Phaser.Scene {
     
 
     preload() {
-
+        // a = 5;
         // Trial info
-        this.load.json('trial_info', './src/trial_info6.json');
+        if (this.game.config.binary) {
+            console.log("BINARY");
+            this.load.json('trial_info', './src/trial_info6_binary.json');
+        }
+        else {
+            this.load.json('trial_info', './src/trial_info6.json');
+        }        
 
         // Images
 
@@ -87,15 +93,12 @@ class GameScene extends Phaser.Scene {
         this.load.image('ast3', './assets/asteroid3.png');
         this.asteroid_textures = ['ast1', 'ast2', 'ast3']
 
-        this.load.image('indicatorBackground', './assets/loadIndicatorBackground.png');
-
-        this.load.image('minus', './assets/minusButton.png');
-        this.load.image('minusHover', './assets/minusButtonHover.png');
-        this.load.image('minusPressed', './assets/minusButtonPressed.png');
-
-        this.load.image('plus', './assets/plusButton.png');
-        this.load.image('plusHover', './assets/plusButtonHover.png');
-        this.load.image('plusPressed', './assets/plsuButtonPressed.png');
+        // Medals
+        this.medalImages = [];
+        for (var i=1;i<9;i++) {
+            this.load.image('medal' + i, './assets/medal' + i + '.png');
+            this.medalImages.push('medal' + i);
+        }
 
         // PLANET
         this.load.image('planet', './assets/planet.png');
@@ -116,6 +119,15 @@ class GameScene extends Phaser.Scene {
 
         // Score
         this.registry.values.trial = this.game.registry.values.trial;
+
+        // Medals
+        this.registry.set('medals', 0);
+        this.registry.set('trialsWithoutMedal', 0);
+
+        this.medalYpos = [];
+        for (var i=0; i<9;i++) {
+            this.medalYpos.push(980 - i * 30);
+        }
 
         // Trial info
 
@@ -224,6 +236,9 @@ class GameScene extends Phaser.Scene {
 
     startDecisionPhase() {
 
+        // For RT
+        this.startTime = new Date();
+
         this.selectionActive = true;
         
 
@@ -280,11 +295,12 @@ class GameScene extends Phaser.Scene {
 
         this.selectionActive = true;
 
-        
-
     }
 
     endDecisionPhase() {
+
+        this.endTime = new Date();
+        this.RT = this.endTime - this.startTime;
 
         this.currentState = 'outcome';
 
@@ -363,6 +379,14 @@ class GameScene extends Phaser.Scene {
                 }
 
                 this.updateHealthBar();
+                
+                if (this.planetHealth >= 1 & this.registry.values.trialsWithoutMedal > 5) {
+                    this.createMedal();
+                }
+                else {
+                    this.registry.values.trialsWithoutMedal += 1;
+                }
+                
 
 
             },
@@ -370,7 +394,7 @@ class GameScene extends Phaser.Scene {
         })
 
         var end = this.time.addEvent({
-            delay: this.game.config.outcome_duration ,
+            delay: this.game.config.outcome_duration,
             callback: function() {
                 this.endOutcomePhase();
             },
@@ -388,7 +412,9 @@ class GameScene extends Phaser.Scene {
             choice1: this.selectedShip + 1,
             state2: this.secondStageState + 1,
             points: this.outcome,
-            health: this.planetHealth
+            health: this.planetHealth,
+            medals: this.registry.get('medals'),
+            RT: this.RT
         }
 
         this.game.registry.values.data[this.registry.values.trial] = trialData;
@@ -405,11 +431,6 @@ class GameScene extends Phaser.Scene {
         this.outcomeText.visible = false;
 
         this.registry.values.trial += 1;
-
-        if (this.planetHealth <= 0) {
-            this.scene.start('GameOver');
-        }
-
         
         if (this.registry.values.trial == 2 & this.game.config.testing) {
             this.saveData();
@@ -419,6 +440,10 @@ class GameScene extends Phaser.Scene {
             this.saveData();
             this.scene.start('EndScene');
         }
+        else if (this.planetHealth <= 0) {
+            this.scene.start('GameOver');
+        }
+
         else {
             this.startDecisionPhase();
         }
@@ -432,6 +457,30 @@ class GameScene extends Phaser.Scene {
         docRef.update({
             trial_data: this.game.registry.values.data
         })
+    }
+
+    createMedal() {
+
+        var medalBox = this.add.rectangle(500, 250, 350, 380, "0x1c1c1c");
+        var medal = this.add.image(500, 200, this.medalImages[this.registry.get('medals')]);
+        var medalText = this.add.text(500, 370, 'Congratulations, you got the \nplanet to 100% supplies!\nHave a medal!',  
+                            {color: 'white', fontFamily: 'Rubik', fontSize: 20, align:'center'});
+        medalText.setOrigin(0.5);
+
+        this.time.addEvent({
+            delay:3000,
+            callback: function() {
+                medalBox.destroy();
+                medalText.destroy();
+                medal.x = this.medalYpos[this.registry.get('medals')];
+                medal.y = 15;
+                medal.setScale(0.11);
+                this.game.registry.values.medals += 1;
+                this.registry.values.trialsWithoutMedal = 0;
+            },
+            callbackScope: this
+        })
+
     }
 
     createSelectionBoxes() {

@@ -47,7 +47,7 @@ class EndScene extends Phaser.Scene {
         this.text.setInteractive();
 
         this.text.on('pointerup', function() {
-            postTestItems(this.cache.game.language, this);
+            postTestItems(this);
         }, this);
         
             
@@ -60,7 +60,7 @@ class EndScene extends Phaser.Scene {
 
 }
 
-var postTestItems = function(language, context) {
+var postTestItems = function(context) {
 
 
     document.getElementById('start').innerHTML = `
