@@ -357,6 +357,11 @@ class GameScene extends Phaser.Scene {
                 }
                 
                 this.planetHealth += change
+
+                if (this.planetHealth > 1) {
+                    this.planetHealth = 1;
+                }
+
                 this.updateHealthBar();
 
 
