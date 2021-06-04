@@ -369,7 +369,7 @@ class TrainingScene extends GameScene {
             this.nextStep();
         }
         else {
-            this.game.registry.set('trial', 0);
+            // this.game.registry.set('trial', 0);
             this.startDecisionPhase();
         }
         

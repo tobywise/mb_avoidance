@@ -33,7 +33,7 @@ let config = {
     height: 600,
     scene: [
         // GameStart,
-        // TrainingScene,
+        TrainingScene,
         game,
         gameover,
         EndScene
