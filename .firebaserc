@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "onlinetesting-96dd3"
+  },
+  "targets": {
+    "onlinetesting-96dd3": {
+      "hosting": {
+        "spaceship2": [
+          "spaceship-2"
+        ]
+      }
+    }
+  }
+}

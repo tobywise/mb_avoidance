@@ -7,7 +7,6 @@ class SpaceShip extends Phaser.GameObjects.Container {
         this.ship = this.list[1];
         this.label = this.list[2];
         this.thrust = this.list[0];
-        console.log(this.scene);
         // this.thrust.visible = false;
 
         this.horizontal = false;

@@ -10,6 +10,7 @@ var sampleRate;
 class GameScene extends Phaser.Scene {
 
     constructor(key) {
+
         super({
             key: key,
             physics: {
@@ -41,7 +42,7 @@ class GameScene extends Phaser.Scene {
         this.slot_width = 60;
         this.slot_height = 5;
         this.button_size = 80;
-        this.decisionTime = 7;
+        this.decisionTime = 5;
         this.asteroidSpeed = 1000;
         this.asteroidTimes = [250, 1500];
         this.outcomeDelay = 2000;
@@ -51,22 +52,11 @@ class GameScene extends Phaser.Scene {
         this.loadIndicator1_pos = [200, 400];
         this.loadIndicator2_pos = [800, 400];
 
-        this.shipNames = ['Green ship', 'Red ship', 'Pink ship', 'Orange ship'];
-
         this.yPositions = [150, 450];
         this.xPositions = [200, 800];
 
         this.currentState = 'decision';
 
-        this.trial = 0;
-
-        // this.cache.json.get('trial_info') = [
-        //     {
-        //         state1: 1,
-        //         state1_outcome: 6,
-        //         state2_outcome: 2
-        //     }
-        // ]
 
     }
 
@@ -75,12 +65,18 @@ class GameScene extends Phaser.Scene {
     preload() {
 
         // Trial info
-        this.load.json('trial_info', './src/trial_info.json');
+        this.load.json('trial_info', './src/trial_info4.json');
 
         // Images
 
         // Ship
-        this.load.image('ship', './assets/thrust_ship.png');
+        // this.load.image('ship', './assets/thrust_ship.png');
+
+        this.load.image('Green ship', './assets/greenShip.png');
+        this.load.image('Red ship', './assets/redShip.png');
+        this.load.image('Orange ship', './assets/orangeShip.png');
+        this.load.image('Pink ship', './assets/pinkShip.png');
+
         this.load.image('fire', './assets/flame2.png');
 
         // // Background
@@ -101,6 +97,9 @@ class GameScene extends Phaser.Scene {
         this.load.image('plusHover', './assets/plusButtonHover.png');
         this.load.image('plusPressed', './assets/plsuButtonPressed.png');
 
+        // PLANET
+        this.load.image('planet', './assets/planet.png');
+
         // Explosion
         this.load.spritesheet('kaboom', './assets/explode.png', {
             frameWidth: 128,
@@ -111,24 +110,16 @@ class GameScene extends Phaser.Scene {
 
     create() {
 
+        // Keys
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.selectionActive = false;
+
         // Score
-        this.registry.set('score', 0);
+        this.registry.values.trial = this.game.registry.values.trial;
 
         // Trial info
-        console.log(this.trial_info);
 
-        // Add explosions, from here https://github.com/robhimslf/game-dev-invaders
-        this.anims.create({
-            key: 'explode',
-            frames: this.anims.generateFrameNumbers( 'kaboom', {
-                start: 0,
-                end: 15
-            }),
-            frameRate: 16,
-            repeat: 0,
-            hideOnComplete: true
-        });
-
+        this.createExplosions();
 
         this.bgImg = this.add.image(400, 100, 'space');
         this.bgImg.setScale(0.5);
@@ -146,34 +137,17 @@ class GameScene extends Phaser.Scene {
         this.createLoadIndicator(this.loadIndicator2_pos[0], this.loadIndicator2_pos[1], 'indicator_4');
 
         this.hideIndicators();
-        // this.showIndicators([1]);       
-
-        // this.loadIndicators[1].showOnlyBars();
-
-        // this.loadIndicators[1].flashDamageBars(4);
-        // this.loadIndicators[1].stopFlashDamageBars();
 
         this.ships = [];
-        this.shipNames.forEach(i => this.createShip(i));
+        this.game.config.shipNames.forEach(i => this.createShip(i));
         this.hideShips();
-        // this.showShips([1, 2]);
-
-        // this.ships[1].setHorizontal();
-        // this.ships[2].setHorizontal();
-
-        // this.setShipPos(2, 200, 500);
-
-
-        // this.ships[1].setMoving(true);
-        // this.ships[1].setMoving(true);
-        // this.ships[2].setMoving(true);
-
-        // this.ships[1].showLabel(true);
-
         this.createCountdown();
         
         this.createUI();
 
+        this.outcomeText = this.add.text(800, 300, '-50%', {color: '#ffbd54', font: '50px Rubik'});
+        this.outcomeText.setOrigin(0.5);
+        this.outcomeText.visible = false;
 
         // Add horizontal bar
         this.horizontalBar = this.add.line(500, 300, 0, 0, 1000, 0, "0xe8e8e8");
@@ -187,23 +161,40 @@ class GameScene extends Phaser.Scene {
 
         this.phaseStarted = false;
 
-        this.OKButton = new Button(this, 500, 490, 130, 100);
-        this.OKButton.setText('OK');
-        this.OKButton.visible = false;
-        this.OKButton.buttonBackground.on('pointerdown', () => {this.endDecisionPhase()});
+        // this.OKButton = new Button(this, 500, 490, 130, 100);
+        // this.OKButton.setText('OK');
+        // this.OKButton.visible = false;
+        // this.OKButton.buttonBackground.on('pointerdown', () => {this.endDecisionPhase()});
         
         this.tooSlowText = this.add.text(500, 400, 'Too slow!', {color: 'red', fontFamily: 'Rubik', fontSize: 30});
         this.tooSlowText.setOrigin(0.5);
         this.tooSlowText.visible = false;
 
         this.scoreText.text = 'Score: ' + this.registry.get('score');
+        this.scoreText.visible = false;
 
+        this.createSelectionBoxes();
+
+        this.planetHealth = 0.8;
+        this.updateHealthBar();
+
+        this.n_trials = Object.keys(this.cache.json.get('trial_info')).length;
+        this.updateTrialCount();
+
+        this.start();
+    }
+
+    start() {
         this.startDecisionPhase();
-
     }
 
     // Update - runs constantly
     update() {
+
+        // if (!this.phaseStarted) {
+        //     this.startDecisionPhase();
+        //     this.phaseStarted= true;
+        // }
         
         // if (!this.phaseStarted & this.currentState == 'decision') {
         //     this.startDecisionPhase();
@@ -217,9 +208,26 @@ class GameScene extends Phaser.Scene {
 
     }
 
+    createExplosions() {
+        // Add explosions, from here https://github.com/robhimslf/game-dev-invaders
+        this.anims.create({
+            key: 'explode',
+            frames: this.anims.generateFrameNumbers( 'kaboom', {
+                start: 0,
+                end: 15
+            }),
+            frameRate: 16,
+            repeat: 0,
+            hideOnComplete: true
+        });
+    }
+
     startDecisionPhase() {
 
-        explosions = this.add.group({
+        this.selectionActive = true;
+        
+
+        this.explosions = this.add.group({
             defaultKey: 'kaboom',
             maxSize: 20,
             active: false
@@ -231,165 +239,133 @@ class GameScene extends Phaser.Scene {
         if (typeof this.bgUpEvent != 'undefined') {
             this.bgUpEvent.remove();
         }
-        console.log(this.bgUpEvent);
-        console.log(this.bgDownEvent);
+
 
         this.shiftBackground('up');
 
-        console.log('starting');
         this.currentTime = this.decisionTime;
         this.updateTrialCount();
         this.tooSlowText.visible = false;
-        this.OKButton.visible = true;
-        // this.OKButton.setInteractive();
 
         var indicator_x_order = Phaser.Math.Between(0, 1);
 
-        if (this.cache.json.get('trial_info')[this.trial].state1 == 1) {
-            var indicator_idx = [0, 1];
+        if (this.cache.json.get('trial_info')[this.registry.values.trial].state1 == 1) {
+            var ship_idx = [0, 1];
         }
         else {
-            var indicator_idx = [2, 3];
+            var ship_idx = [2, 3];
         }
 
-        this.showIndicators(indicator_idx);
-
-
-        var indicator_pos = this.xPositions;
+        var ship_pos = [...this.xPositions];
         if (indicator_x_order == 1) {
-            indicator_pos.reverse();
+            ship_pos.reverse();
         }
 
-        // indicator_idx.forEach(i => this.setIndicatorPos(i, 200, 200));
-        this.setIndicatorPos(indicator_idx[0], indicator_pos[0], this.loadIndicator1_pos[1]);
-        this.setIndicatorPos(indicator_idx[1], indicator_pos[1], this.loadIndicator2_pos[1]);
-        indicator_idx.forEach(i => this.loadIndicators[i].showOutcome(false));
-        indicator_idx.forEach(i => this.loadIndicators[i].displayLoad());
+        this.shipID = {
+            left: ship_idx[indicator_x_order],
+            right: ship_idx[1 - indicator_x_order],
+        }
 
         this.startCountdown();
 
-        this.showShips(indicator_idx);
-        this.setShipPos(indicator_idx[0], indicator_pos[0], 150);
-        this.setShipPos(indicator_idx[1], indicator_pos[1], 150);
-        indicator_idx.forEach(i => this.ships[i].setThrust(false));
+        this.showShips(ship_idx);
+        this.setShipPos(ship_idx[0], ship_pos[0], 300);
+        this.setShipPos(ship_idx[1], ship_pos[1], 300);
+        ship_idx.forEach(i => this.ships[i].setThrust(false));
 
-        this.visible_ships = indicator_idx;
+        this.visible_ships = ship_idx;
+
+        
+        this.hideSelectionBoxes();
+
+        this.selectionActive = true;
+
+        
 
     }
 
     endDecisionPhase() {
-        this.currentState = 'outcome';
-        console.log('ENDING');
 
-        this.hideIndicators();
+        this.currentState = 'outcome';
+
         this.countdownEvent.destroy();
         this.countdownText.visible = false;
-        this.OKButton.visible = false;
-        // this.hideShips();
-        
+
         this.phaseStarted = false;
 
-        this.trial += 1;
-
-        // this.startOutcomePhase();
 
         this.shiftBackground('down');
+
 
     }
 
     startOutcomePhase() {
-        
 
-        var zone_order = Phaser.Math.Between(0, 1);
-        var zone_ypos = [this.yPositions[0], this.yPositions[1]];
-        if (zone_order == 1) {
-            zone_ypos = zone_ypos.reverse();
+        this.selectionBoxes.left.visible = false;
+        this.selectionBoxes.right.visible = false;
+        
+        if (this.selectedShip == 0 | this.selectedShip == 3) {
+            this.secondStageState = 0;
+        }
+        else {
+            this.secondStageState = 1;
         }
 
-        this.boxes[0].y = zone_ypos[0];
-        this.boxes[1].y = zone_ypos[1];
+        this.showZone(this.secondStageState);
 
-        this.showZones();
+        this.hideShips();
+        this.showShips([this.selectedShip]);
+        this.ships[this.selectedShip].setThrust(true)
+        this.ships[this.selectedShip].setHorizontal(true)
 
-        this.visible_ships.forEach(i => this.ships[i].setThrust(true));
-        this.visible_ships.forEach(i => this.ships[i].setHorizontal());
-        // this.visible_ships.forEach(i => this.ships[i].setMoving(true));
+        this.setShipPos(this.selectedShip, 200, 300);
+        console.log(this.registry.values.trial);
+        var thisTrialInfo = this.cache.json.get('trial_info')[this.registry.values.trial];
 
-        this.setShipPos(this.visible_ships[0], 200, zone_ypos[0]);
-        this.setShipPos(this.visible_ships[1], 200, zone_ypos[1]);
+        // OUTCOMES
+        if (this.secondStageState == 0) {
+            var outcome = thisTrialInfo.state1_outcome;
+        }
+        else {
+            var outcome = thisTrialInfo.state2_outcome;
+        }
 
-        var thisTrialInfo = this.cache.json.get('trial_info')[this.trial];
-        console.log(thisTrialInfo);
-
+        this.outcome = outcome;
+    
         var asteroidEvent1 = this.time.addEvent({
             delay: this.asteroidTimes[0],
             callback: function() {
-                this.createAsteroids(zone_ypos[0], thisTrialInfo.state1_outcome);
+                this.createAsteroids(300, parseInt(outcome   / 10));
             },
             callbackScope: this
         })
         
-        var asteroidEvent2 = this.time.addEvent({
-            delay: this.asteroidTimes[1],
-            callback: function() {
-                this.createAsteroids(zone_ypos[1], thisTrialInfo.state2_outcome);
-            },
-            callbackScope: this
-        })
-
-
-        // OUTCOMES
-        var outcomeA = this.loadIndicators[0].calculateOutcome(thisTrialInfo.state1_outcome);
-        var outcomeB = this.loadIndicators[1].calculateOutcome(thisTrialInfo.state2_outcome);
-
-        this.registry.set('score', this.registry.get('score') + outcomeA + outcomeB);
 
         var outcomeEvent1 = this.time.addEvent({
             delay: this.asteroidTimes[0] + this.outcomeDelay,
             callback: function() {
-                this.loadIndicators[0].x = 800;
-                this.loadIndicators[0].y = zone_ypos[0] - 20;
-                this.loadIndicators[0].showOnlyBars();
-                this.loadIndicators[0].flashDamageBars(thisTrialInfo.state1_outcome);
-            },
-            callbackScope: this
-        })
+                this.outcomeText.text = '-' + outcome + '%';
+                this.outcomeText.visible = true;
 
-        var outcomeEvent2_stop = this.time.addEvent({
-            delay: this.asteroidTimes[0] + this.outcomeDelay + this.outcomeFlashDuration,
-            callback: function() {
-                this.loadIndicators[0].showDamageBars(thisTrialInfo.state1_outcome)
-                this.loadIndicators[0].stopFlashDamageBars();
-                this.loadIndicators[0].showOutcome(true);
-            },
-            callbackScope: this
-        })
+                var gain = 0.28 * (1- (outcome / 100));
+                var loss = -0.2;
+                
+                var change = gain + loss
+
+                if (change < 0) {
+                    change = change * 2;
+                }
+                
+                this.planetHealth += change
+                this.updateHealthBar();
 
 
-        var outcomeEvent2 = this.time.addEvent({
-            delay: this.asteroidTimes[1] + this.outcomeDelay,
-            callback: function() {
-                this.loadIndicators[1].x = 800;
-                this.loadIndicators[1].y = zone_ypos[1] - 20;
-                this.loadIndicators[1].showOnlyBars();
-                this.loadIndicators[1].flashDamageBars(thisTrialInfo.state2_outcome);
-            },
-            callbackScope: this
-        })
-
-        var outcomeEvent2_stop = this.time.addEvent({
-            delay: this.asteroidTimes[1] + this.outcomeDelay + this.outcomeFlashDuration,
-            callback: function() {
-                this.loadIndicators[1].showDamageBars(thisTrialInfo.state2_outcome)
-                this.loadIndicators[1].stopFlashDamageBars();
-                this.loadIndicators[1].showOutcome(true);
-                this.scoreText.text = 'Score: ' + this.registry.get('score');
             },
             callbackScope: this
         })
 
         var end = this.time.addEvent({
-            delay: this.outcomePhaseDuration,
+            delay: this.game.config.outcome_duration ,
             callback: function() {
                 this.endOutcomePhase();
             },
@@ -400,35 +376,143 @@ class GameScene extends Phaser.Scene {
 
     endOutcomePhase() {
 
-        this.visible_ships.forEach(i => this.ships[i].setThrust(false));
-        this.visible_ships.forEach(i => this.ships[i].setVertical());
-        // this.visible_ships.forEach(i => this.ships[i].setMoving(false));
+        // DATA
+        var trialData = {
+            trial: this.registry.values.trial,
+            state1: this.cache.json.get('trial_info')[this.registry.values.trial].state1 + 1,
+            choice1: this.selectedShip + 1,
+            state2: this.secondStageState + 1,
+            points: this.outcome,
+            health: this.planetHealth
+        }
 
-        this.visible_ships.forEach(i => this.loadIndicators[i].showAll());
-        this.hideIndicators();
+        this.game.registry.values.data[this.registry.values.trial] = trialData;
+
+        if (this.registry.values.trial % 10 == 2) {
+            this.saveData();
+        }
+
+        this.ships.forEach(i => i.setThrust(false));
+        this.ships.forEach(i => i.setVertical());
+
         this.hideShips();
         this.hideZones();
+        this.outcomeText.visible = false;
 
-        this.startDecisionPhase();
+        this.registry.values.trial += 1;
 
+        if (this.planetHealth <= 0) {
+            this.scene.start('GameOver');
+        }
+
+        
+        if (this.registry.values.trial == 2 & this.game.config.testing) {
+            this.saveData();
+            this.scene.start('EndScene');
+        }
+        else if (this.registry.values.trial == this.n_trials) {
+            this.saveData();
+            this.scene.start('EndScene');
+        }
+        else {
+            this.startDecisionPhase();
+        }
+
+    }
+
+    saveData() {
+
+        var docRef = this.game.config.db.collection("spaceship_MB").doc(this.game.config.studyID).collection('subjects').doc(this.game.config.uid);
+
+        docRef.update({
+            trial_data: this.game.registry.values.data
+        })
+    }
+
+    createSelectionBoxes() {
+
+        var leftBox = this.add.rectangle(this.xPositions[0], 300, 250, 250, "0x1c1c1c");
+        leftBox.setFillStyle("0xffffff", 0.1);
+        leftBox.setStrokeStyle(2, "0xffffff");
+
+
+        var rightBox = this.add.rectangle(this.xPositions[1], 300, 250, 250,"0x1c1c1c");
+        rightBox.setFillStyle("0xffffff", 0.1);
+        rightBox.setStrokeStyle(2, "0xffffff");
+
+        rightBox.visible = false;
+        leftBox.visible = false;
+
+        this.selectionBoxes = {
+            left: leftBox, 
+            right: rightBox
+        }
+
+        this.cursors.left.on('down', function() { 
+            if (this.selectionActive) {
+                this.selectionBoxes.left.visible = true; 
+                this.selectionActive = false;
+                this.selectedShip = this.shipID.left;
+                this.time.addEvent({
+                    delay: this.outcomePhaseDelay,
+                    callback: function() {
+                        this.endDecisionPhase();
+                    },
+                    callbackScope: this
+                })
+            }
+        }, this);
+
+        this.cursors.right.on('down', function() { 
+            if (this.selectionActive) {
+                this.selectionBoxes.right.visible = true; 
+                this.selectionActive = false;
+                this.selectedShip = this.shipID.right;
+                this.time.addEvent({
+                    delay: this.outcomePhaseDelay,
+                    callback: function() {
+                        this.endDecisionPhase();
+                    },
+                    callbackScope: this
+                })
+            }
+        }, this);
+
+    }
+
+    hideSelectionBoxes() {
+        this.selectionBoxes.right.visible = false;
+        this.selectionBoxes.left.visible = false;
     }
 
     createZones() {
 
         // Add coloured boxes
-        var boxA = this.add.rectangle(0, 0, 1000, 300, '0xffdd00');
+        if (this.game.config.secondStateOrder == 1) {
+            var boxA = this.add.rectangle(0, 0, 1000, 600, '0xffdd00');
+            var boxB = this.add.rectangle(0, 0, 1000, 600, '0x00aeff');
+        }
+        else {
+            var boxB = this.add.rectangle(0, 0, 1000, 600, '0xffdd00');
+            var boxA = this.add.rectangle(0, 0, 1000, 600, '0x00aeff');
+        }
+        
         boxA.alpha = 0.2;
-
-        var boxB = this.add.rectangle(0, 0, 1000, 300, '0x00aeff');
         boxB.alpha = 0.2;
 
         // Zone labels
-        var ZoneALabel = this.add.text(-490, -110, 'Yellow zone', {color: '#ffdd00', font: '20px Rubik'});
-        var ZoneBLabel = this.add.text(-490, -110, 'Blue zone', {color: '#00aeff', font: '20px Rubik'});
+        if (this.game.config.secondStateOrder == 1) {
+            var ZoneALabel = this.add.text(-490, -250, 'Yellow zone', {color: '#ffdd00', font: '20px Rubik'});
+            var ZoneBLabel = this.add.text(-490, -250, 'Blue zone', {color: '#00aeff', font: '20px Rubik'});
+        }
+        else {
+            var ZoneBLabel = this.add.text(-490, -250, 'Yellow zone', {color: '#ffdd00', font: '20px Rubik'});
+            var ZoneALabel = this.add.text(-490, -250, 'Blue zone', {color: '#00aeff', font: '20px Rubik'});
+        }
 
         // Containers
-        var boxAGroup = new Phaser.GameObjects.Container(this, 500, 150, [boxA, ZoneALabel]);
-        var boxBGroup = new Phaser.GameObjects.Container(this, 500, 450, [boxB, ZoneBLabel]);
+        var boxAGroup = new Phaser.GameObjects.Container(this, 500, 300, [boxA, ZoneALabel]);
+        var boxBGroup = new Phaser.GameObjects.Container(this, 500, 300, [boxB, ZoneBLabel]);
 
         this.add.existing(boxAGroup);
         this.add.existing(boxBGroup);
@@ -448,6 +532,10 @@ class GameScene extends Phaser.Scene {
     showZones() {
         this.boxes.forEach(i => i.visible = true);
         this.horizontalBar.visible = true;
+    }
+
+    showZone(i) {
+        this.boxes[i].visible = true;
     }
 
     createAsteroids(y, n) {
@@ -475,7 +563,7 @@ class GameScene extends Phaser.Scene {
                 asteroidGroup.children.iterate(function (child) {
                     if (typeof child !== 'undefined') {
                         if (child.x < 200) {                       
-                            var explosion = explosions.get();
+                            var explosion = this.explosions.get();
                             explosion.setScale(0.6, 0.6);
                             explosion.setOrigin( 0.8, 0.5 );
                             explosion.x = child.x;
@@ -500,8 +588,6 @@ class GameScene extends Phaser.Scene {
     }
 
     shiftBackground(position) {
-
-        console.log('SHIFT');
 
         if (position == 'up' & this.bgPos != 'up') {
 
@@ -597,7 +683,7 @@ class GameScene extends Phaser.Scene {
 
     createShip(name) {
 
-        var ship = this.add.sprite(0, 0, 'ship').setOrigin(0.5).setRotation(4.71).setScale(3);
+        var ship = this.add.sprite(0, 0, name).setOrigin(0.5).setRotation(4.71).setScale(0.5);
         var thrust = this.add.sprite(0, 80, 'fire').setRotation(Phaser.Math.DegToRad(180));
         var label = this.add.text(0, -70, name, {color: 'white', fontFamily: 'Rubik', fontSize: 30}).setOrigin(0.5);
         
@@ -651,8 +737,8 @@ class GameScene extends Phaser.Scene {
                 
                 if (this.currentTime == 0) {
                     this.countdownText.visible = false;
-                    this.OKButton.visible = false;
                     this.tooSlowText.visible = true;
+                    this.selectionActive = false;
                     this.countdownEvent.remove();
                     this.restartTrial();
                 }
@@ -679,13 +765,74 @@ class GameScene extends Phaser.Scene {
 
         this.topBar = this.add.rectangle(0, 0, 1000, 30, "0x292929").setOrigin(0);
         this.scoreText = this.add.text(500, 15, 'Score: 3029', {color: 'white', font: '20px Rubik'}).setOrigin(0.5);
-        this.trialText = this.add.text(10, 5, '1 / 90', {color: 'white', font: '20px Rubik'}).setOrigin(0);
+        this.registry.values.trialText = this.add.text(10, 5, '1 / 90', {color: 'white', font: '20px Rubik'}).setOrigin(0);
+
+        this.planet = this.add.image(500, 500, 'planet');
+        this.planet.setOrigin(0.5);
+        this.planet.setScale(0.2);
+
+        this.healthBarWidth = 250;    
+        this.healthBackround = this.add.rectangle(500, 575, this.healthBarWidth, 25, "0x292929");
+
+        this.healthBar = this.add.rectangle(500 - (this.healthBarWidth / 2), 575 - (25 / 2), this.healthBarWidth, 25, "0x4287f5");
+        this.healthBar.setOrigin(0);
+
+        this.healthBorder  = this.add.rectangle(500, 575, this.healthBarWidth, 25, "0x292929");
+        this.healthBorder .setFillStyle("0xffffff", 0);
+        this.healthBorder .setStrokeStyle(1, "0xffffff");
+    }
+
+    hideUI() {
+
+        this.planet.visible = false;
+        this.healthBackround.visible = false;
+        this.healthBar.visible = false;
+        this.healthBorder.visible = false;
+
+    }
+
+    showUI() {
+
+        this.planet.visible = true;
+        this.healthBackround.visible = true;
+        this.healthBar.visible = true;
+        this.healthBorder.visible = true;
+
+    }
+
+    movePlanetUIRight() {
+        this.planet.x += 300;
+        this.healthBackround.x += 300;
+        this.healthBar.x += 300;
+        this.healthBorder.x += 300;
+    }
+
+    updateHealthBar() {
+
+        var currentHealth = this.planetHealth;
+        if (currentHealth < 0) {
+            currentHealth = 0;
+        }
+
+        if (currentHealth > 1) {
+            currentHealth = 1;
+        }
+        this.healthBar.displayWidth = this.healthBarWidth * currentHealth;
+
+        let c1 = Phaser.Display.Color.HexStringToColor('#ff7300');
+        let c2 = Phaser.Display.Color.HexStringToColor('#4fcaff'); 
+
+        var col = Phaser.Display.Color.Interpolate.ColorWithColor(c1, c2, 100, parseInt(currentHealth * 100));
+        
+        var newC = Phaser.Display.Color.GetColor(col.r, col.g, col.b);
+
+        this.healthBar.setFillStyle(newC);
 
     }
 
     updateTrialCount() {
 
-        this.trialText.text = this.trial + ' / 90';
+        this.registry.values.trialText.text = this.registry.values.trial + ' / ' + this.n_trials;
     }
 
 }

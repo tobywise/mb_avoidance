@@ -35,18 +35,6 @@ class GameStart extends Phaser.Scene {
 
     }
 
-    update() {
-
-        var cursors = this.input.keyboard.createCursorKeys();
-
-        if (cursors.space.isDown) {
-            cursors.space.isDown = false;
-            this.scene.start('GameScene', {
-                score: this.scoreVal,
-                practice: true
-            });
-        }
-    }
 
 
 }

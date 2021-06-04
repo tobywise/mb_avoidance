@@ -1,0 +1,11 @@
+{
+  "hosting": {
+    "target": "spaceship2",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}
