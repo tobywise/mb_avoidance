@@ -65,7 +65,7 @@ class GameScene extends Phaser.Scene {
     preload() {
 
         // Trial info
-        this.load.json('trial_info', './src/trial_info5.json');
+        this.load.json('trial_info', './src/trial_info6.json');
 
         // Images
 
