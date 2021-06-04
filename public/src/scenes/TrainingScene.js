@@ -366,10 +366,10 @@ class TrainingScene extends GameScene {
         if (this.nCorrect >= correctThreshold) {
             this.trainingInstructions = true;
             this.trainingStep = 19;
+            this.game.registry.set('trial', 0);
             this.nextStep();
         }
         else {
-            // this.game.registry.set('trial', 0);
             this.startDecisionPhase();
         }
         

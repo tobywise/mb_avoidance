@@ -236,6 +236,7 @@ class GameScene extends Phaser.Scene {
 
     startDecisionPhase() {
 
+
         // For RT
         this.startTime = new Date();
 
