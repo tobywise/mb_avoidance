@@ -15,12 +15,6 @@ RollbarProxy.prototype.sendJsonPayload = function(json, success, error) {
   console.log(json);
 }
 
-try {
-    doSomething();
-  } catch (e) {
-    Rollbar.error("Something went wrong", e);
-  }
-
 // SET UP GAME
 // var training = new GameScene('TrainingScene');
 var game = new GameScene('GameScene');

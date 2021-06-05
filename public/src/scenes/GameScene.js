@@ -504,7 +504,7 @@ class GameScene extends Phaser.Scene {
         }
 
         this.cursors.left.on('down', function() { 
-            if (this.selectionActive) {
+            if (this.selectionActive& this.bgPos != 'down') {
                 this.selectionBoxes.left.visible = true; 
                 this.selectionActive = false;
                 this.selectedShip = this.shipID.left;
@@ -519,7 +519,7 @@ class GameScene extends Phaser.Scene {
         }, this);
 
         this.cursors.right.on('down', function() { 
-            if (this.selectionActive) {
+            if (this.selectionActive & this.bgPos != 'down') {
                 this.selectionBoxes.right.visible = true; 
                 this.selectionActive = false;
                 this.selectedShip = this.shipID.right;
@@ -649,10 +649,11 @@ class GameScene extends Phaser.Scene {
             this.bgUpEvent = this.time.addEvent({
                 delay: 50,
                 callback: function() {
-                    this.bgPos = 'up';
+                    
                     this.bgImg.y -= 10;
                     if (this.bgImg.y <= 100) {
                         this.bgUpEvent.remove();
+                        this.bgPos = 'up';
                     }
                 },
                 callbackScope: this,
@@ -666,7 +667,7 @@ class GameScene extends Phaser.Scene {
             this.bgDownEvent = this.time.addEvent({
                 delay: 10,
                 callback: function() {
-                    this.bgPos = 'down';
+                    
                     this.bgImg.y += 2;
                     // console.log(this.bgDownEvent);
                     // console.log(this.bgImg.y);
@@ -674,6 +675,7 @@ class GameScene extends Phaser.Scene {
                         // console.log('aaa');
                         this.bgDownEvent.remove();
                         this.startOutcomePhase();
+                        this.bgPos = 'down';
                     }
                 },
                 callbackScope: this,

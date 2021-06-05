@@ -276,6 +276,7 @@ class TrainingScene extends GameScene {
     }
 
     endDecisionPhase() {
+
         this.currentState = 'outcome';
 
         this.countdownEvent.destroy();
@@ -286,6 +287,9 @@ class TrainingScene extends GameScene {
         this.registry.values.trial += 1;
 
         this.shiftBackground('down');
+
+        // Chain = button pressed > endDecisionPhase() > move background > startOutcomePhase()
+        // if background doesn't move, startOutcomePhase doesn't work
 
     }
 
