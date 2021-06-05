@@ -265,7 +265,7 @@ class GameScene extends Phaser.Scene {
 
         var indicator_x_order = Phaser.Math.Between(0, 1);
 
-        if (this.cache.json.get('trial_info')[this.registry.values.trial].state1 == 1) {
+        if (this.cache.json.get('trial_info')[this.registry.values.trial].state1 == 0) {
             var ship_idx = [0, 1];
         }
         else {
