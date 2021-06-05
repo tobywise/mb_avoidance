@@ -67,7 +67,7 @@ class GameScene extends Phaser.Scene {
         // Trial info
         if (this.game.config.binary) {
             console.log("BINARY");
-            this.load.json('trial_info', './src/trial_info6_binary.json');
+            this.load.json('trial_info', './src/trial_info7_binary.json');
         }
         else {
             this.load.json('trial_info', './src/trial_info6.json');
@@ -381,7 +381,7 @@ class GameScene extends Phaser.Scene {
 
                 this.updateHealthBar();
                 
-                if (this.planetHealth >= 1 & this.registry.values.trialsWithoutMedal > 5) {
+                if (this.planetHealth >= 1 & this.registry.values.trialsWithoutMedal > 5 & this.registry.get('medals') < 8) {
                     this.createMedal();
                 }
                 else {
@@ -432,7 +432,7 @@ class GameScene extends Phaser.Scene {
         this.outcomeText.visible = false;
 
         this.registry.values.trial += 1;
-        
+
         if (this.registry.values.trial == 2 & this.game.config.testing) {
             this.saveData();
             this.scene.start('EndScene');
@@ -444,8 +444,12 @@ class GameScene extends Phaser.Scene {
         else if (this.planetHealth <= 0) {
             this.scene.start('GameOver');
         }
-
+        else if (this.registry.values.trial > 0 & this.registry.values.trial % 40 == 0) {
+            this.saveData();
+            this.scene.start('BreakScene');
+        }
         else {
+
             this.startDecisionPhase();
         }
 
@@ -459,6 +463,7 @@ class GameScene extends Phaser.Scene {
             trial_data: this.game.registry.values.data
         })
     }
+
 
     createMedal() {
 

@@ -3,22 +3,13 @@ import TrainingScene from './scenes/TrainingScene.js';
 import GameScene from './scenes/GameScene.js';
 import GameOver from './scenes/GameOver.js';
 import EndScene from './scenes/EndScene.js';
-
-
-var RollbarProxy = function() {};
-
-RollbarProxy.prototype.sendJsonPayload = function(json, success, error) {
-  // Queue, store, or forward json payload
-
-  // Callback either error or success
-//   success(msg);
-  console.log(json);
-}
+import BreakScene from './scenes/BreakScene.js';
 
 // SET UP GAME
 // var training = new GameScene('TrainingScene');
 var game = new GameScene('GameScene');
 var gameover = new GameOver("GameOver");
+var breakScene = new BreakScene("BreakScene");
 
 let config = {
     type: Phaser.WEBGL,
@@ -30,7 +21,8 @@ let config = {
         TrainingScene,
         game,
         gameover,
-        EndScene
+        EndScene,
+        breakScene
     ]
 };
 

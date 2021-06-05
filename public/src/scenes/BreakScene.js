@@ -1,10 +1,9 @@
-class GameOver extends Phaser.Scene {
+class BreakScene extends Phaser.Scene {
 
     init() {
     }
 
     create() {
-
 
         this.gameOverText = this.make.text({    
             style: {
@@ -15,20 +14,20 @@ class GameOver extends Phaser.Scene {
         this.gameOverText.y = 100;
         this.gameOverText.originX = 0.5;
         this.gameOverText.originY = 0.5;
-        this.gameOverText.setText('GAME OVER');
+        this.gameOverText.setText('Break');
         this.gameOverText.setAlign('center');
 
         this.text = this.make.text({    
             style: {
-            font: '15px Rubik',
+            font: '25px Rubik',
             fill: 'white',
         }});
         this.text.x = 500;
         this.text.y = 300;
         this.text.originX = 0.5;
         this.text.originY = 0.5;
-        this.text.setText('The planet ran out of supplies!\n\n' +
-            '\n\n\nPress space to play again!\n\nThe game will continue until you have made ' + Object.keys(this.cache.json.get('trial_info')).length + ' decisions\n\nin total, regardless of how many times you see this screen');
+        this.text.setText('Take a break!\n\n' +
+            '\n\n\nPress space when you are ready to continue\n\n');
         this.text.setAlign('center');
         this.saveData();
 
@@ -59,4 +58,4 @@ class GameOver extends Phaser.Scene {
 
 }
 
-export default GameOver;
+export default BreakScene;
