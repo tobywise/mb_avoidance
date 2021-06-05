@@ -41,7 +41,7 @@ class EndScene extends Phaser.Scene {
         this.text.originX = 0.5;
         this.text.originY = 0.5;
         this.text.setText('End of the game!\n\n\n\n' +
-            '\n\n\nClick here to finish the task');
+            '\n\n\nClick here to move on');
         this.text.setAlign('center');
         
         this.text.setInteractive();
@@ -104,7 +104,7 @@ var postTestItems = function(context) {
 
     document.getElementById('start').innerHTML += `
     </p>
-    <button type=\"button\" id=\"startButton\" class=\"submit_button\">OK</button>
+    <button type=\"button\" id=\"startButton\" class=\"submit_button\">Next</button>
     <br><br>
     `
 
@@ -126,17 +126,17 @@ var postTestItems = function(context) {
         }).then(
             function() {
 
-                var complete_url = 'https://app.prolific.co/submissions/complete?cc=10B15748';    
-                document.getElementById('start').innerHTML = 'Thank you! Please click' +
-                ' <a href="' + complete_url + '">here</a> to return to Prolific';
-                window.location.href = complete_url;
+                // var complete_url = 'https://app.prolific.co/submissions/complete?cc=10B15748';    
+                // document.getElementById('start').innerHTML = 'Thank you! Please click' +
+                // ' <a href="' + complete_url + '">here</a> to return to Prolific';
+                window.location.href = 'questionnairesPost.html?STUDY=' + context.game.registry.get('studyID') + '&UID=' + context.game.config.uid;
             }
         
         ).catch(function(error) {
-            console.error("Error writing document: ", error);
-            var complete_url = 'https://app.prolific.co/submissions/complete?cc=10B15748';    
-            document.getElementById('start').innerHTML = 'Thank you! Please click' +
-            ' <a href="' + complete_url + '">here</a> to return to Prolific';
+            // console.error("Error writing document: ", error);
+            // var complete_url = 'https://app.prolific.co/submissions/complete?cc=10B15748';    
+            // document.getElementById('start').innerHTML = 'Thank you! Please click' +
+            // ' <a href="' + complete_url + '">here</a> to return to Prolific';
             window.location.href = complete_url;
             }
         )

@@ -17,7 +17,6 @@ let config = {
     width: 1000,
     height: 600,
     scene: [
-        // GameStart,
         TrainingScene,
         game,
         gameover,
@@ -130,7 +129,6 @@ var check_start = function (uid) {
         game.registry.set('studyID', studyID.toLowerCase());
         game.config.studyID = studyID.toLowerCase();
      
-
 
         //////////////////////////////////
 
